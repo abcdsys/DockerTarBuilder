@@ -20,11 +20,12 @@ jobs:
           images="${{ github.event.inputs.docker_images }}"
           IFS=',' read -r -a image_array <<< "$images"
           for image in "${image_array[@]}"; do
-            docker pull "${image}" --platform "linux/arm64"
+            docker pull "${image}" --platform "linux/arm/v7"
             image_name="${image//\//_}"
             image_name="${image_name//:/_}"
-            docker save "${image}" -o "${image_name}-amd64.tar"
-            tar -czf "${image_name}.tar.gz" "${image_name}-amd64.tar"; rm "${image_name}-amd64.tar"
+            docker save "${image}" -o "${image_name}-arm32.tar"
+            gzip -c "${image_name}-arm32.tar" > "${image_name}-arm32.tar.gz"
+            rm "${image_name}-arm32.tar"
           done
 
       - name: List generated files (debug step)
@@ -37,22 +38,23 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@master
         with:
-          tag_name: DockerTarBuilder
-          name: ${{ env.RELEASE_NAME }}
+          tag_name: DockerTarBuilder-ARM32
+          name: ${{ env.RELEASE_NAME }} for ARM32
           body: |
-            ![GitHub Release](https://img.shields.io/github/v/release/wukongdaily/DockerTarBuilder?style=for-the-badge&logoSize=amg&labelColor=%23FFBF00&color=%2300C598)
-            > Automatically generated release docker images for arm32
+            [![Github](https://img.shields.io/badge/RELEASE:DockerTarBuilder-123456?logo=github&logoColor=fff&labelColor=green&style=for-the-badge)](https://www.bilibili.com/video/BV1EZ421M7mL) [![Github](https://img.shields.io/badge/国内加速站下载-FC7C0D?logo=github&logoColor=fff&labelColor=000&style=for-the-badge)](https://wkdaily.cpolar.top/archives/1)
             ### How to use? For example
             `docker load -i alpine_latest.tar.gz `
+            ### Video teaching
+            [![Bilibili](https://img.shields.io/badge/Bilibili-123456?logo=bilibili&logoColor=fff&labelColor=fb7299)](https://www.bilibili.com/video/BV1yyq6YREdF)
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Docker images as release assets
-        uses: softprops/action-gh-release@master
+        uses: softprops/action-gh-release@v2.1.0
         with:
-          tag_name: DockerTarBuilder
+          tag_name: DockerTarBuilder-ARM32
           files: ${{ github.workspace }}/*.tar.gz
           token: ${{ secrets.GITHUB_TOKEN }}
         env:
